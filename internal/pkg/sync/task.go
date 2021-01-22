@@ -80,7 +80,7 @@ func (t *Task) validate() error {
 		if err := m.validate(); err != nil {
 			return err
 		}
-		hasRegexp = hasRegexp || m.isRegexp()
+		hasRegexp = hasRegexp || m.isRegexpFrom()
 	}
 
 	if hasRegexp {
@@ -162,7 +162,7 @@ func (t *Task) mappingRefs(m *Mapping) ([][2]string, error) {
 
 	if m != nil {
 
-		if m.isRegexp() {
+		if m.isRegexpFrom() {
 
 			repos, err := t.repoList.Get()
 			if err != nil {
@@ -172,14 +172,14 @@ func (t *Task) mappingRefs(m *Mapping) ([][2]string, error) {
 			for _, r := range m.filterRepos(repos) {
 				ret = append(ret, [2]string{
 					t.Source.Registry + r,
-					t.Target.Registry + m.To + r,
+					t.Target.Registry + m.mapPath(r),
 				})
 			}
 
 		} else {
 			ret = append(ret, [2]string{
 				t.Source.Registry + m.From,
-				t.Target.Registry + m.To,
+				t.Target.Registry + m.mapPath(m.From),
 			})
 		}
 	}

@@ -32,6 +32,8 @@ type Mapping struct {
 	Tags []string `yaml:"tags"`
 	//
 	fromFilter *regexp.Regexp
+	toFilter   *regexp.Regexp
+	toReplace  string
 }
 
 //
@@ -45,21 +47,33 @@ func (m *Mapping) validate() error {
 		return fmt.Errorf("mapping without 'From' path")
 	}
 
-	if m.isRegexp() {
+	if m.isRegexpFrom() {
 		regex := m.From[len(RegexpPrefix):]
 		var err error
-		if m.fromFilter, err = compileRegex(regex); err != nil {
-			return fmt.Errorf("invalid regular expression '%s': %v", regex, err)
+		if m.fromFilter, err = compileRegex(regex, true); err != nil {
+			return fmt.Errorf(
+				"'from' uses invalid regular expression '%s': %v", regex, err)
 		}
-
 	} else {
-		if m.To == "" {
-			m.To = m.From
-		}
 		m.From = normalizePath(m.From)
 	}
 
-	m.To = normalizePath(m.To)
+	if m.isRegexpTo() {
+		parts := strings.SplitN(m.To[len(RegexpPrefix):], ",", 2)
+		regex := parts[0]
+		if len(parts) < 2 {
+			return fmt.Errorf("replacement expression missing in 'to'")
+		}
+		m.toReplace = parts[1]
+
+		var err error
+		if m.toFilter, err = compileRegex(regex, false); err != nil {
+			return fmt.Errorf(
+				"'to' uses invalid regular expression '%s': %v", regex, err)
+		}
+	} else if m.To != "" {
+		m.To = normalizePath(m.To)
+	}
 
 	return nil
 }
@@ -67,7 +81,7 @@ func (m *Mapping) validate() error {
 //
 func (m *Mapping) filterRepos(repos []string) []string {
 
-	if m.isRegexp() {
+	if m.isRegexpFrom() {
 		ret := make([]string, 0, len(repos))
 		for _, r := range repos {
 			if m.fromFilter.MatchString(r) {
@@ -81,17 +95,40 @@ func (m *Mapping) filterRepos(repos []string) []string {
 }
 
 //
-func (m *Mapping) isRegexp() bool {
-	return strings.HasPrefix(m.From, RegexpPrefix)
+func (m *Mapping) mapPath(p string) string {
+	if m.isRegexpTo() {
+		return m.toFilter.ReplaceAllString(p, m.toReplace)
+	}
+	if m.To != "" {
+		return m.To
+	}
+	return p
 }
 
 //
-func compileRegex(v string) (*regexp.Regexp, error) {
-	if !strings.HasPrefix(v, "^") {
-		v = fmt.Sprintf("^%s", v)
-	}
-	if !strings.HasSuffix(v, "$") {
-		v = fmt.Sprintf("%s$", v)
+func (m *Mapping) isRegexpFrom() bool {
+	return isRegexp(m.From)
+}
+
+//
+func (m *Mapping) isRegexpTo() bool {
+	return isRegexp(m.To)
+}
+
+//
+func isRegexp(expr string) bool {
+	return strings.HasPrefix(expr, RegexpPrefix)
+}
+
+//
+func compileRegex(v string, line bool) (*regexp.Regexp, error) {
+	if line {
+		if !strings.HasPrefix(v, "^") {
+			v = fmt.Sprintf("^%s", v)
+		}
+		if !strings.HasSuffix(v, "$") {
+			v = fmt.Sprintf("%s$", v)
+		}
 	}
 	return regexp.Compile(v)
 }

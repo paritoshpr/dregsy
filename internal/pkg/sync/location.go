@@ -66,10 +66,10 @@ func (l *Location) validate() error {
 			return fmt.Errorf("invalid Auth: %v", err)
 		}
 		l.creds = crd
+		l.Auth = ""
 	} else {
 		l.creds = &auth.Credentials{}
 	}
-	l.Auth = ""
 
 	var interval time.Duration
 
