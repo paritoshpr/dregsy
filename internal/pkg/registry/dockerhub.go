@@ -81,7 +81,7 @@ func (d *dockerhub) Retrieve() ([]string, error) {
 	}
 
 	url := fmt.Sprintf(
-		"https://hub.docker.com/v2/repositories/%s/?page_size=1000",
+		"https://hub.docker.com/v2/repositories/%s/?page_size=100",
 		d.creds.Username())
 	req, err := http.NewRequest("GET", url, nil)
 	req.Header.Set("Accept", "application/json")

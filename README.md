@@ -2,8 +2,6 @@
 
 ## TODO
 - make sure token is used wherever possible (index lister and push/pull on all registries that are not GCR or ECR are still using user/pass)
-- regexp replacements in To mapping
-- regexp tests
 
 
 ## Synopsis

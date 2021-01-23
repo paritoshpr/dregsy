@@ -100,6 +100,9 @@ func (m *Mapping) mapPath(p string) string {
 		return m.toFilter.ReplaceAllString(p, m.toReplace)
 	}
 	if m.To != "" {
+		if m.isRegexpFrom() {
+			return m.To + p
+		}
 		return m.To
 	}
 	return p

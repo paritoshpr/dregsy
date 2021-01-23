@@ -30,11 +30,12 @@ import (
 
 //
 type Location struct {
-	Registry      string                  `yaml:"registry"`
-	Auth          string                  `yaml:"auth"`
-	SkipTLSVerify bool                    `yaml:"skip-tls-verify"`
-	AuthRefresh   *time.Duration          `yaml:"auth-refresh"`
-	Lister        registry.ListSourceType `yaml:"lister"`
+	Registry      string            `yaml:"registry"`
+	Auth          string            `yaml:"auth"`
+	SkipTLSVerify bool              `yaml:"skip-tls-verify"`
+	AuthRefresh   *time.Duration    `yaml:"auth-refresh"`
+	ListerConfig  map[string]string `yaml:"lister"`
+	ListerType    registry.ListSourceType
 	//
 	creds *auth.Credentials
 }
@@ -50,8 +51,15 @@ func (l *Location) validate() error {
 		return errors.New("registry not set")
 	}
 
-	if l.Lister != "" && !registry.IsValidListSourceType(l.Lister) {
-		return fmt.Errorf("invalid lister type: %s", l.Lister)
+	if l.ListerConfig != nil {
+		if typ, ok := l.ListerConfig["type"]; ok {
+			l.ListerType = registry.ListSourceType(typ)
+			if !l.ListerType.IsValid() {
+				return fmt.Errorf("invalid lister type: %s", l.ListerType)
+			}
+		} else {
+			return fmt.Errorf("no lister type set")
+		}
 	}
 
 	disableAuth := l.Auth == "none"

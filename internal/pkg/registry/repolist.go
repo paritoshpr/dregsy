@@ -36,7 +36,7 @@ const (
 )
 
 //
-func IsValidListSourceType(t ListSourceType) bool {
+func (t ListSourceType) IsValid() bool {
 	switch t {
 	case Catalog, DockerHub, Index:
 		return true
@@ -51,8 +51,8 @@ type ListSource interface {
 }
 
 //
-func NewRepoList(registry string, typ ListSourceType, creds *auth.Credentials) (
-	*RepoList, error) {
+func NewRepoList(registry string, typ ListSourceType, config map[string]string,
+	creds *auth.Credentials) (*RepoList, error) {
 
 	list := &RepoList{registry: registry}
 
@@ -96,7 +96,11 @@ func NewRepoList(registry string, typ ListSourceType, creds *auth.Credentials) (
 		list.source = newDockerhub(reg, insecure, listCreds)
 
 	case Index:
-		list.source = newIndex(reg, listCreds.Username(), insecure, listCreds)
+		if filter, ok := config["search"]; ok && filter != "" {
+			list.source = newIndex(reg, filter, insecure, listCreds)
+		} else {
+			return nil, fmt.Errorf("index lister requires a search expression")
+		}
 
 	case Catalog, "":
 		list.source = newCatalog(
