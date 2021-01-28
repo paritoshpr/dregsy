@@ -130,3 +130,17 @@ This uses `DefaultService.Search` from the [*Docker* registry lib](https://pkg.g
         to: regex:jenkins/,dh/other-jenkins/
         tags: ["latest"]
     ```
+
+## Note on Custom TLS Certificate Authorities
+When a lister contacts an endpoint, TLS verification is based on the CA certificates offered by the host's OS. This is due to the various libraries being used to retrieve the lists. Additional CA certificates therefore need to be added using the OS's methods. Note that this is different from adding CA certificates for the *Skopeo* and *Docker* relays. There, you would place them inside `/etc/skopeo/certs.d` or `/etc/docker/certs.d`, to be used by the respective relay. They will however not be picked up by the listers.
+
+To add CA certificates to the *dregsy* *Docker* image, you could build your own image based on it:
+
+```Dockerfile
+FROM xelalex/dregsy:latest
+
+COPY my-ca.crt /usr/local/share/ca-certificates/my-ca.crt
+RUN update-ca-certificates
+```
+
+When adding CA certificates to the host OS, you may no longer have to place them into one of the above mentioned directories for the relays, but I haven't tried that out.

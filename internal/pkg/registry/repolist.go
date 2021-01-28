@@ -51,24 +51,11 @@ type ListSource interface {
 }
 
 //
-func NewRepoList(registry string, typ ListSourceType, config map[string]string,
-	creds *auth.Credentials) (*RepoList, error) {
+func NewRepoList(registry string, insecure bool, typ ListSourceType,
+	config map[string]string, creds *auth.Credentials) (*RepoList, error) {
 
 	list := &RepoList{registry: registry}
-
-	insecure := false
-	reg := ""
-
-	if strings.HasPrefix(registry, "http://") {
-		insecure = true
-		reg = registry[7:]
-	} else if strings.HasPrefix(registry, "https://") {
-		reg = registry[8:]
-	} else {
-		reg = registry
-	}
-
-	server := strings.SplitN(reg, ":", 2)[0]
+	server := strings.SplitN(registry, ":", 2)[0]
 
 	// DockerHub does not expose the registry catalog API, but separate APIs for
 	// listing and searching. These APIs use tokens that are different from the
@@ -93,18 +80,18 @@ func NewRepoList(registry string, typ ListSourceType, config map[string]string,
 	switch typ {
 
 	case DockerHub:
-		list.source = newDockerhub(reg, insecure, listCreds)
+		list.source = newDockerhub(registry, insecure, listCreds)
 
 	case Index:
 		if filter, ok := config["search"]; ok && filter != "" {
-			list.source = newIndex(reg, filter, insecure, listCreds)
+			list.source = newIndex(registry, filter, insecure, listCreds)
 		} else {
 			return nil, fmt.Errorf("index lister requires a search expression")
 		}
 
 	case Catalog, "":
 		list.source = newCatalog(
-			reg, insecure, strings.HasSuffix(server, ".gcr.io"), listCreds)
+			registry, insecure, strings.HasSuffix(server, ".gcr.io"), listCreds)
 
 	default:
 		return nil, fmt.Errorf("invalid list source type '%s'", typ)

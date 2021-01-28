@@ -79,7 +79,7 @@ When syncing via a *Docker* relay, do not use the same *Docker* daemon for build
 
 ### Repository Validation & Client Authentication with TLS
 
-When connecting to source and target repository servers, TLS validation is performed to verify the identity of a server. If you're using self-signed certificates for a repo server, or a server's certificate cannot be validated with the CA bundle available on your system, you need to provide the required CA certs. (The *dregsy* *Docker* image includes the CA bundle from the official `golang` image). Also, if a repo server requires client authentication, i.e. mutual TLS, you need to provide an appropriate client key & cert pair.
+When connecting to source and target repository servers, TLS validation is performed to verify the identity of a server. If you're using self-signed certificates for a repo server, or a server's certificate cannot be validated with the CA bundle available on your system, you need to provide the required CA certs. The *dregsy* *Docker* image includes the CA bundle that comes with the *Alpine* base image. Also, if a repo server requires client authentication, i.e. mutual TLS, you need to provide an appropriate client key & cert pair.
 
 How you do that for *Docker* is [described here](https://docs.docker.com/engine/security/certificates/). The short version: create a folder under `/etc/docker/certs.d` with the same name as the repo server's host name, e.g. `source-registry.acme.com`, and place any required CA certs there as `*.crt` (mind the extension). Client key & cert pairs go there as well, as `*.key` and `*.cert`.
 

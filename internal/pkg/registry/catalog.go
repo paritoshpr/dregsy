@@ -19,12 +19,15 @@ package registry
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"golang.org/x/oauth2"
 
 	gocrauthn "github.com/google/go-containerregistry/pkg/authn"
 	gocrname "github.com/google/go-containerregistry/pkg/name"
 	gocrremote "github.com/google/go-containerregistry/pkg/v1/remote"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/xelalexv/dregsy/internal/pkg/auth"
 )
@@ -41,8 +44,9 @@ func newCatalog(reg string, insecure, bearer bool,
 				TokenURL: fmt.Sprintf("https://%s/token", reg),
 			},
 		},
-		bearer: bearer,
-		creds:  creds,
+		insecure: insecure,
+		bearer:   bearer,
+		creds:    creds,
 	}
 }
 
@@ -50,6 +54,7 @@ func newCatalog(reg string, insecure, bearer bool,
 type catalog struct {
 	registry string
 	conf     *oauth2.Config
+	insecure bool
 	bearer   bool
 	creds    *auth.Credentials
 }
@@ -59,11 +64,13 @@ func (c *catalog) Retrieve() ([]string, error) {
 
 	reg, err := gocrname.NewRegistry(c.registry)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid registry: %v", err)
 	}
 
+	log.Debugf("registry scheme = %s", reg.Scheme())
+
 	if err := c.creds.Refresh(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error refreshing credentials: %v", err)
 	}
 
 	var auth gocrauthn.Authenticator
@@ -77,10 +84,17 @@ func (c *catalog) Retrieve() ([]string, error) {
 		}
 	}
 
+	opts := []gocrremote.Option{gocrremote.WithAuth(auth)}
+	if c.insecure {
+		t := http.DefaultTransport.(*http.Transport).Clone()
+		t.TLSClientConfig.InsecureSkipVerify = true
+		opts = append(opts, gocrremote.WithTransport(t))
+	}
+
 	// FIXME: parameterize max page size
-	ret, err := gocrremote.CatalogPage(reg, "", 100, gocrremote.WithAuth(auth))
+	ret, err := gocrremote.CatalogPage(reg, "", 100, opts...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting catalog page: %v", err)
 	}
 
 	return ret, nil

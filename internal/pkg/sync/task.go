@@ -85,9 +85,9 @@ func (t *Task) validate() error {
 
 	if hasRegexp {
 		var err error
-		if t.repoList, err = registry.NewRepoList(
-			t.Source.Registry, t.Source.ListerType,
-			t.Source.ListerConfig, t.Source.creds); err != nil {
+		s := t.Source
+		if t.repoList, err = registry.NewRepoList(s.Registry, s.SkipTLSVerify,
+			s.ListerType, s.ListerConfig, s.creds); err != nil {
 			return fmt.Errorf(
 				"cannot create repo list for task '%s': %v", t.Name, err)
 		}
