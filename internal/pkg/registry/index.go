@@ -18,7 +18,6 @@ package registry
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/registry"
@@ -40,12 +39,11 @@ func newIndex(reg, filter string, insecure bool, creds *auth.Credentials) ListSo
 	}
 
 	ret.opts = &registry.ServiceOptions{}
-
 	if insecure {
-		ret.auth.ServerAddress = fmt.Sprintf("http://%s", reg)
-	} else {
-		ret.auth.ServerAddress = fmt.Sprintf("https://%s", reg)
+		ret.opts.InsecureRegistries = []string{reg}
 	}
+
+	ret.auth.ServerAddress = reg
 
 	return ret
 }

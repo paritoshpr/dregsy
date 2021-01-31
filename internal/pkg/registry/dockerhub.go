@@ -55,7 +55,7 @@ type DHRepoDescriptor struct {
 }
 
 //
-func newDockerhub(reg string, insecure bool, creds *auth.Credentials) ListSource {
+func newDockerhub(creds *auth.Credentials) ListSource {
 	return &dockerhub{creds: creds}
 }
 

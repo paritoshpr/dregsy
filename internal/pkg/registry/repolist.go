@@ -80,7 +80,7 @@ func NewRepoList(registry string, insecure bool, typ ListSourceType,
 	switch typ {
 
 	case DockerHub:
-		list.source = newDockerhub(registry, insecure, listCreds)
+		list.source = newDockerhub(listCreds)
 
 	case Index:
 		if filter, ok := config["search"]; ok && filter != "" {
