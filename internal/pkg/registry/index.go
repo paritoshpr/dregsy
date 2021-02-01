@@ -18,6 +18,8 @@ package registry
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/registry"
@@ -29,6 +31,10 @@ import (
 func newIndex(reg, filter string, insecure bool, creds *auth.Credentials) ListSource {
 
 	ret := &index{filter: filter}
+
+	if !isDockerHub(reg) {
+		ret.filter = fmt.Sprintf("%s/%s", reg, filter)
+	}
 
 	ret.auth = &types.AuthConfig{
 		Username: creds.Username(),
@@ -87,4 +93,11 @@ func (i *index) Ping() error {
 		return err
 	}
 	return nil
+}
+
+//
+func isDockerHub(reg string) bool {
+	return reg == "" || reg == "docker.com" || reg == "docker.io" ||
+		strings.HasSuffix(reg, ".docker.com") ||
+		strings.HasSuffix(reg, ".docker.io")
 }
